@@ -23,9 +23,8 @@ const generateAccessAndRefreshTokens = async (userId) => {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
+    
     // get user details from frontend
-    console.log(req.body)
-
     const { fullName, email, username, password } = req.body
 
     // validation-not empty
@@ -55,14 +54,13 @@ const registerUser = asyncHandler(async (req, res) => {
         console.log("hello", coverImageLocalPath)
     }
 
-
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
     }
-    // upload them to cloudinary, avatar
+
+    // upload them to cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-    // console.log(coverImage?.url)
 
     if (!avatar) {
         throw new ApiError(400, "Avatar file is required")

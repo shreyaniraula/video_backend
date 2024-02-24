@@ -1,4 +1,3 @@
-import mongoose, { isValidObjectId, mongo } from "mongoose"
 import { Tweet } from "../models/tweet.model.js"
 import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
@@ -6,16 +5,18 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res) => {
-    const { tweetContent } = req.body
+    console.log(req.body)
+    const { content } = req.body
 
-    if (!tweetContent) {
+    if (!content) {
+        console.log(content)
         throw new ApiError(400, "Tweet content is required")
     }
 
     //create tweet
     const tweet = await Tweet.create({
         owner: req.user?._id,
-        content: tweetContent
+        content: content
     })
 
     //check if tweet is created
@@ -33,7 +34,7 @@ const createTweet = asyncHandler(async (req, res) => {
 const getUserTweets = asyncHandler(async (req, res) => {
 
     //find multiple tweets of the user
-    const tweet = await User.findMany({ owner: req.user?._id })
+    const tweet = await Tweet.find({ owner: req.user?._id })
 
     if (!tweet) {
         throw new ApiError(404, "No tweets found")
@@ -55,7 +56,7 @@ const updateTweet = asyncHandler(async (req, res) => {
     }
 
     const tweet = await Tweet.findByIdAndUpdate(
-        req.tweet?._id,
+        req.params.tweetId,
         {
             $set: {
                 content: content
@@ -74,7 +75,7 @@ const updateTweet = asyncHandler(async (req, res) => {
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
-    const { tweetId } = req.tweet?._id
+    const tweetId = req.params.tweetId
 
     if (!tweetId) {
         throw new ApiError(404, "Tweet not found")

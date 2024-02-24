@@ -12,10 +12,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
-        // console.log("In try block: ")
-        // console.log(`Acc: ${accessToken}`)
-        // console.log(`Ref: ${refreshToken}`)
-
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
         return { refreshToken, accessToken }
@@ -28,6 +24,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     // get user details from frontend
+    console.log(req.body)
 
     const { fullName, email, username, password } = req.body
 
@@ -51,7 +48,6 @@ const registerUser = asyncHandler(async (req, res) => {
     // console.log(req.files)
     // check for images, check for avatar
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
@@ -76,7 +72,6 @@ const registerUser = asyncHandler(async (req, res) => {
         fullName,
         avatar: avatar.url,
         coverImage: coverImage?.url || "",
-        // coverImage: coverImage?.url || "",
         email,
         password,
         username: username.toLowerCase()

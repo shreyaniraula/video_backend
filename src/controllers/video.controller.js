@@ -1,6 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Video } from "../models/video.model.js"
-import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -8,8 +7,42 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+    let { page = 1, limit = 10, sortBy = "createdAt", sortType, userId } = req.query
+
+    limit = parseInt(limit)
+    page = parseInt(page)
+
+    if (!userId) {
+        throw new ApiError(404, "User Id is required")
+    }
+
+    const sortOptions = {};
+    sortOptions[sortBy] = sortType === "desc" ? -1 : 1;
+
+    const video = await Video.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $sort: sortOptions
+        },
+        {
+            $skip: (page - 1) * limit
+        },
+        {
+            $limit: limit
+        }
+    ])
+
+    if (!video || video.length == 0) {
+        throw new ApiError(400, "Videos not found")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, video, "Videos fetched successfully")
+    )
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -70,13 +103,13 @@ const getVideoById = asyncHandler(async (req, res) => {
     //TODO: get video by id
     const { videoId } = req.params
 
-    if(!videoId){
+    if (!videoId) {
         throw new ApiError(404, "Video Id is required")
     }
 
     const video = await Video.findById(videoId)
 
-    if(!video){
+    if (!video) {
         throw new ApiError(404, "Video does not exist")
     }
 
@@ -88,24 +121,24 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
     //TODO: update video details like title, description, thumbnail
     const { videoId } = req.params
-    const {title, description} = req.body
+    const { title, description } = req.body
     const thumbnailLocalPath = req.file?.path
-    
-    if(!videoId){
+
+    if (!videoId) {
         throw new ApiError(404, "Video id is required")
     }
 
-    if(!title || !description){
+    if (!title || !description) {
         throw new ApiError(404, "All fields are required")
     }
-    
-    if(!thumbnailLocalPath){
+
+    if (!thumbnailLocalPath) {
         throw new ApiError(404, "Thumbnail is required")
     }
 
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
 
-    if(!thumbnail){
+    if (!thumbnail) {
         throw new ApiError(400, "Error while uploading thumbnail")
     }
 
@@ -118,17 +151,17 @@ const updateVideo = asyncHandler(async (req, res) => {
                 thumbnail: thumbnail.url
             }
         },
-        {new: true}
+        { new: true }
     )
 
-    if(!updatedVideo){
+    if (!updatedVideo) {
         throw new ApiError(500, "Some error occured while updating the video")
     }
 
     return res.status(200).json(
         new ApiResponse(
-        200, updatedVideo, "Video details updated successfully"
-    ))
+            200, updatedVideo, "Video details updated successfully"
+        ))
 
 })
 
@@ -136,13 +169,13 @@ const deleteVideo = asyncHandler(async (req, res) => {
     //TODO: delete video
     const { videoId } = req.params
 
-    if(!videoId){
+    if (!videoId) {
         throw new ApiError(404, "Video Id is required")
     }
 
     const deletedVideo = await Video.findByIdAndDelete(videoId)
 
-    if(!deletedVideo){
+    if (!deletedVideo) {
         throw new ApiError(400, "Some error occurred while deleting the video")
     }
 
@@ -153,6 +186,33 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+
+    if (!videoId) {
+        throw new ApiError(404, "Video id is required")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(404, "Video not found")
+    }
+
+    const toggledPublishStatus = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set: {
+                isPublished: !video.isPublished
+            }
+        }
+    )
+
+    if (!toggledPublishStatus) {
+        throw new ApiError(400, "Some error occured while toggling publish status")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, toggledPublishStatus, "Publish status toggled successfully")
+    )
 })
 
 export {

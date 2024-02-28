@@ -1,11 +1,10 @@
-import mongoose, { isValidObjectId } from "mongoose"
+import mongoose from "mongoose"
 import { Like } from "../models/like.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on video
     const { videoId } = req.params
 
     if (!videoId) {
@@ -35,7 +34,6 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on comment
     const { commentId } = req.params
 
     if (!commentId) {
@@ -63,7 +61,6 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 })
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on tweet
     const { tweetId } = req.params
 
     if (!tweetId) {
@@ -91,7 +88,6 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 )
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
 
     const user = req.user._id;
 

@@ -37,8 +37,35 @@ const createPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-    //TODO: get user playlists
     const { userId } = req.params
+
+    if(!userId){
+        throw new ApiError(404, "User id is required")
+    }
+
+    const userPlaylists = await Playlist.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "videos"
+            }
+        }
+    ])
+
+    if(!userPlaylists){
+        throw new ApiError(400, "Some error occurred while fetching playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, userPlaylists, "Playlist fetched successfully")
+    )
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
@@ -89,7 +116,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     }
 
     return res.status(200).json(
-        new ApiResponse(200, addedVideo, "Video added in the playlist")
+        new ApiResponse(200, {}, "Video added in the playlist")
     )
 })
 
@@ -105,6 +132,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Playlist does not exist")
     }
 
+    //does not work
     if (!playlist.videos.includes(videoId)) {
         throw new ApiError(200, {}, "Video is not in the playlist")
     }
@@ -119,12 +147,11 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     }
 
     return res.status(200).json(
-        new ApiResponse(200, removedVideo, "Video removed successfully")
+        new ApiResponse(200, {}, "Video removed successfully")
     )
 })
 
 const deletePlaylist = asyncHandler(async (req, res) => {
-    // TODO: delete playlist
     const { playlistId } = req.params
 
     if(!playlistId){
@@ -145,7 +172,37 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 const updatePlaylist = asyncHandler(async (req, res) => {
     const { playlistId } = req.params
     const { name, description } = req.body
-    //TODO: update playlist
+
+    if(!playlistId){
+        throw new ApiError(404, "Playlist id is required")
+    }
+
+    if(!name || !description){
+        throw new ApiError(404, "Name and description are required")
+    }
+
+    const playlistExist = await Playlist.findOne({ name: name })
+
+    if (playlistExist) {
+        throw new ApiError(400, "Playlist with the given name already exists")
+    }
+
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(
+        playlistId,
+        {
+            $set: {name, description}
+        },{
+            new: true
+        }
+    )
+
+    if(!updatedPlaylist){
+        throw new ApiError(400, "Some error occurred while updating playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedPlaylist, "Playlist updated successfully")
+    )
 })
 
 export {

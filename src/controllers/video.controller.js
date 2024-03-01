@@ -31,7 +31,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         {
             $skip: (page - 1) * limit
         },
-        {
+    {
             $limit: limit
         }
     ])
